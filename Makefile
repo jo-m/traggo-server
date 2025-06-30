@@ -20,6 +20,9 @@ generate-go:
 generate-js:
 	(cd ui && yarn generate)
 
+generate-js-dev:
+	(cd ui && npm run generate)
+
 generate: generate-go generate-js
 
 lint-go:
@@ -38,6 +41,9 @@ format-go:
 format-js:
 	(cd ui && yarn format)
 
+format-js-dev:
+	(cd ui && npm run format)
+
 format: format-go format-js
 
 test-go:
@@ -54,8 +60,17 @@ install-go:
 install-js:
 	(cd ui && yarn)
 
+install-js-dev:
+	(cd ui && npm install --legacy-peer-deps)
+
 build-js:
 	(cd ui && yarn build)
+
+build-js-dev:
+	(cd ui && NODE_OPTIONS=--openssl-legacy-provider npm run build)
+
+run-ui:
+	(cd ui && NODE_OPTIONS=--openssl-legacy-provider npm run start)
 
 pre-build: build-js
 
