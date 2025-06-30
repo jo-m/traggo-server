@@ -11,7 +11,7 @@ import {StopTimer, StopTimerVariables} from '../gql/__generated__/StopTimer';
 import * as gqlTimeSpan from '../gql/timeSpan';
 import {UpdateTimeSpan, UpdateTimeSpanVariables} from '../gql/__generated__/UpdateTimeSpan';
 import IconButton from '@material-ui/core/IconButton';
-import {MoreVert} from '@material-ui/icons';
+import {MoreVert, PlayArrow} from '@material-ui/icons';
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import {RemoveTimeSpan, RemoveTimeSpanVariables} from '../gql/__generated__/RemoveTimeSpan';
@@ -298,6 +298,22 @@ export const TimeSpan: React.FC<TimeSpanProps> = React.memo(
                             </Typography>
                         </div>
                     </div>
+
+                    {to ? (
+                        <IconButton
+                            className={styles.showMoreButton}
+                            onClick={() => {
+                                startTimer({
+                                    variables: {
+                                        start: inUserTz(moment()).format(),
+                                        tags: toInputTags(selectedEntries),
+                                        note: note.current.value,
+                                    },
+                                }).then(() => continued());
+                            }}>
+                            <PlayArrow />
+                        </IconButton>
+                    ) : null}
 
                     <IconButton
                         className={styles.showMoreButton}
