@@ -1,0 +1,11 @@
+name: sync_fork
+on:
+  schedule:
+    - cron: '15 14 * * *'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: tgymnich/fork-sync@v2.0
