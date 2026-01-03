@@ -1,3 +1,4 @@
+version: 2
 project_name: traggo
 builds:
   - id: linux-amd64
@@ -9,7 +10,7 @@ builds:
 checksum:
   disable: true
 changelog:
-  skip: true
+  disable: true
 dockers:
   - use: buildx
     goos: linux
