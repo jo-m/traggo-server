@@ -37,7 +37,6 @@ export interface TagSelectorProps {
     createTags?: boolean;
     allowDuplicateKeys?: boolean;
     onlySelectKeys?: boolean;
-    removeWhenClicked?: boolean;
 }
 
 export const TagSelector: React.FC<TagSelectorProps> = ({
@@ -48,7 +47,6 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
     createTags = true,
     allowDuplicateKeys = false,
     onlySelectKeys = false,
-    removeWhenClicked = false,
 }) => {
     const classes = useStyles();
     const [tooltipErrorActive, tooltipError, showTooltipError] = useError(4000);
@@ -127,14 +125,21 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
         return;
     };
 
-    const onTagClicked = (entry: TagSelectorEntry) => {
-        if (!removeWhenClicked) {
+    const onTagClicked = (entry: TagSelectorEntry, edit: boolean) => {
+        // Prevent overwriting text that's already being edited
+        if (currentValue && edit) {
+            showTooltipError('Input is not empty. Use ctrl+click to delete tag without editing.');
             return;
         }
-        const tagIndex = selectedEntries.indexOf(entry);
-        selectedEntries.splice(tagIndex, 1);
 
-        setSelectedEntries(selectedEntries);
+        setSelectedEntries(selectedEntries.filter((selected) => selected !== entry));
+
+        if (edit) {
+            setCurrentValueInternal(itemLabel(entry, onlySelectKeys));
+            setOpen(true);
+        }
+
+        focusInput();
     };
 
     const onKeyDown = (event: React.KeyboardEvent) => {
@@ -254,13 +259,17 @@ const Item: React.FC<ItemProps> = ({entry, selected, onlySelectKeys, onClick}) =
     );
 };
 
-const toChips = (entries: TagSelectorEntry[], onlySelectKeys: boolean, onClick: (entry: TagSelectorEntry) => void) => {
+const toChips = (
+    entries: TagSelectorEntry[],
+    onlySelectKeys: boolean,
+    onClick: (entry: TagSelectorEntry, edit: boolean) => void
+) => {
     return entries.map((entry) => (
         <TagChip
             key={itemLabel(entry, onlySelectKeys)}
             label={itemLabel(entry, onlySelectKeys)}
             color={entry.tag.color}
-            onClick={() => onClick(entry)}
+            onClick={(e) => onClick(entry, !e.ctrlKey)}
         />
     ));
 };
