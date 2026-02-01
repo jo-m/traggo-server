@@ -182,6 +182,7 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
                     disableHoverListener
                     disableTouchListener
                     open={tooltipErrorActive}
+                    PopperProps={{style: {zIndex: 100000}}}
                     placement={'top'}
                     title={
                         <Typography color="inherit" style={{whiteSpace: 'pre-line'}}>
