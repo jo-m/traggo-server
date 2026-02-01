@@ -18,7 +18,7 @@ const useStyles = makeStyles((theme: Theme) => ({
 interface TagChipProps {
     label: string;
     color: string;
-    onClick?: () => void;
+    onClick?: (e: React.MouseEvent) => void;
 }
 
 export const TagChip: React.FC<TagChipProps> = ({color, label, onClick}) => {
