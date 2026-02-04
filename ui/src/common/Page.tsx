@@ -119,12 +119,12 @@ export const Page: React.FC = ({children}) => {
     const drawer = (
         <div>
             <div className={classes.toolbar}>
-                <HrefLink href="https://github.com/traggo" underline="none">
+                <HrefLink href="https://github.com/traggo" underline="none" target="_blank">
                     <Typography variant="h5" align="center" color="textPrimary">
                         traggo
                     </Typography>
                 </HrefLink>
-                <HrefLink href="https://github.com/traggo/server/releases" underline="none">
+                <HrefLink href="https://github.com/traggo/server/releases" underline="none" target="_blank">
                     <Typography variant="subtitle2" align="center" color="textPrimary">
                         {version.name}@{version.commit.slice(0, 8)}
                     </Typography>
