@@ -1,6 +1,7 @@
 import * as React from 'react';
 import {Tracker} from './Tracker';
 import {ActiveTrackers} from './ActiveTrackers';
+import {Bookmarks} from './Bookmarks';
 import {DoneTrackers} from './DoneTrackers';
 import {TagSelectorEntry} from '../tag/tagSelectorEntry';
 import {RefreshTimeSpans} from './RefreshTimespans';
@@ -10,6 +11,7 @@ export const DailyPage = () => {
     return (
         <div style={{margin: '1px auto', maxWidth: 1000}}>
             <Tracker selectedEntries={selectedEntries} onSelectedEntriesChanged={setSelectedEntries} />
+            <Bookmarks />
             <ActiveTrackers />
             <DoneTrackers
                 addTagsToTracker={

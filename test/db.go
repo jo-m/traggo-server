@@ -261,6 +261,49 @@ func (d *TimeSpanWithDatabase) Tag(key string, stringValue string) *TimeSpanWith
 	return d
 }
 
+// Bookmark adds a bookmark.
+func (d *UserWithDatabase) Bookmark(tags ...string) *BookmarkWithDatabase {
+	bookmark := model.Bookmark{
+		UserID: d.User.ID,
+	}
+	d.DB.Create(&bookmark)
+
+	for i := 0; i < len(tags)-1; i += 2 {
+		tag := model.BookmarkTag{
+			BookmarkID:  bookmark.ID,
+			Key:         tags[i],
+			StringValue: tags[i+1],
+		}
+		bookmark.Tags = append(bookmark.Tags, tag)
+		d.DB.Save(&tag)
+	}
+
+	return &BookmarkWithDatabase{
+		User:     d.User,
+		Bookmark: bookmark,
+		DB:       d.DB,
+		t:        d.t,
+	}
+}
+
+// BookmarkWithDatabase wraps gorm.DB and provides helper methods
+type BookmarkWithDatabase struct {
+	User     model.User
+	Bookmark model.Bookmark
+	t        assert.TestingT
+	*gorm.DB
+}
+
+// AssertExists asserts if the bookmark exists or not.
+func (d *BookmarkWithDatabase) AssertExists(exist bool) *BookmarkWithDatabase {
+	existActual := !d.DB.
+		Where(&model.Bookmark{ID: d.Bookmark.ID}).
+		Find(new(model.Bookmark)).
+		RecordNotFound()
+	assert.True(d.t, exist == existActual)
+	return d
+}
+
 // DashboardWithDatabase wraps gorm.DB and provides helper methods
 type DashboardWithDatabase struct {
 	User      model.User

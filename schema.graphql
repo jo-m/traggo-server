@@ -45,6 +45,9 @@ type RootMutation {
     removeDashboardEntry(id: Int!): DashboardEntry! @hasRole(role: USER)
 
     setUserSettings(settings: InputUserSettings!): UserSettings! @hasRole(role: USER)
+
+    createBookmark(tags: [InputTimeSpanTag!]!): Bookmark! @hasRole(role: USER)
+    removeBookmark(id: Int!): Bookmark! @hasRole(role: USER)
 }
 
 type RootQuery {
@@ -61,6 +64,7 @@ type RootQuery {
     stats2(now: Time!, stats: InputStatsSelection!): [RangedStatisticsEntries!] @hasRole(role: USER)
     version: Version!
     dashboards: [Dashboard!] @hasRole(role: USER)
+    bookmarks: [Bookmark!]! @hasRole(role: USER)
     userSettings: UserSettings!
 }
 
@@ -177,6 +181,11 @@ type TimeSpanTag {
 input InputTimeSpanTag {
     key: String!
     value: String!
+}
+
+type Bookmark {
+    id: Int!
+    tags: [TimeSpanTag!]!
 }
 
 input StatInput {

@@ -9,12 +9,14 @@ import {inUserTz} from './timeutils';
 import {useMutation} from '@apollo/react-hooks';
 import {StopTimer, StopTimerVariables} from '../gql/__generated__/StopTimer';
 import * as gqlTimeSpan from '../gql/timeSpan';
+import * as gqlBookmark from '../gql/bookmark';
 import {UpdateTimeSpan, UpdateTimeSpanVariables} from '../gql/__generated__/UpdateTimeSpan';
 import IconButton from '@material-ui/core/IconButton';
-import {MoreVert, PlayArrow} from '@material-ui/icons';
+import {MoreVert} from '@material-ui/icons';
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import {RemoveTimeSpan, RemoveTimeSpanVariables} from '../gql/__generated__/RemoveTimeSpan';
+import {CreateBookmark, CreateBookmarkVariables} from '../gql/__generated__/CreateBookmark';
 import {useStateAndDelegateWithDelayOnChange} from '../utils/hooks';
 import {TimeSpans} from '../gql/__generated__/TimeSpans';
 import {isSameDate} from '../utils/time';
@@ -37,7 +39,6 @@ export interface TimeSpanProps {
     rangeChange?: (r: Range) => void;
     deleted?: () => void;
     stopped?: () => void;
-    continued?: () => void;
     addTagsToTracker?: (tags: TagSelectorEntry[]) => void;
     elevation?: number;
 }
@@ -92,7 +93,6 @@ export const TimeSpan: React.FC<TimeSpanProps> = React.memo(
         rangeChange = () => {},
         deleted = () => {},
         stopped = () => {},
-        continued = () => {},
         elevation = 1,
         addTagsToTracker,
     }) => {
@@ -115,6 +115,9 @@ export const TimeSpan: React.FC<TimeSpanProps> = React.memo(
         });
         const [startTimer] = useMutation<StartTimer, StartTimerVariables>(gqlTimeSpan.StartTimer, {
             refetchQueries: [{query: gqlTimeSpan.Trackers}],
+        });
+        const [createBookmark] = useMutation<CreateBookmark, CreateBookmarkVariables>(gqlBookmark.CreateBookmark, {
+            refetchQueries: [{query: gqlBookmark.Bookmarks}],
         });
         const [updateTimeSpan] = useMutation<UpdateTimeSpan, UpdateTimeSpanVariables>(gqlTimeSpan.UpdateTimeSpan);
         const noteAwareUpdateTimeSpan = ({variables}: {variables: Omit<UpdateTimeSpanVariables, 'note'>}) => {
@@ -299,22 +302,6 @@ export const TimeSpan: React.FC<TimeSpanProps> = React.memo(
                         </div>
                     </div>
 
-                    {to ? (
-                        <IconButton
-                            className={styles.showMoreButton}
-                            onClick={() => {
-                                startTimer({
-                                    variables: {
-                                        start: inUserTz(moment()).format(),
-                                        tags: toInputTags(selectedEntries),
-                                        note: note.current.value,
-                                    },
-                                }).then(() => continued());
-                            }}>
-                            <PlayArrow />
-                        </IconButton>
-                    ) : null}
-
                     <IconButton
                         className={styles.showMoreButton}
                         onClick={(e: React.MouseEvent<HTMLElement>) => setOpenMenu(e.currentTarget)}>
@@ -332,9 +319,22 @@ export const TimeSpan: React.FC<TimeSpanProps> = React.memo(
                                             tags: toInputTags(selectedEntries),
                                             note: note.current.value,
                                         },
-                                    }).then(() => continued());
+                                    });
                                 }}>
                                 Continue
+                            </MenuItem>
+                        ) : null}
+                        {to ? (
+                            <MenuItem
+                                onClick={() => {
+                                    setOpenMenu(null);
+                                    createBookmark({
+                                        variables: {
+                                            tags: toInputTags(selectedEntries),
+                                        },
+                                    });
+                                }}>
+                                Bookmark
                             </MenuItem>
                         ) : null}
                         {addTagsToTracker ? (
