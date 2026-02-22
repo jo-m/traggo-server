@@ -25,7 +25,7 @@ generate-js-dev:
 generate: generate-go generate-js
 
 lint-go:
-	go vet ./...
+	CGO_CFLAGS="-Wno-return-local-addr" go vet ./...
 	goimports -l $(shell find . -type f -name '*.go' -not -path "./vendor/*")
 
 lint-js:
