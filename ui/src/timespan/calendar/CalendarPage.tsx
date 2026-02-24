@@ -299,6 +299,7 @@ export const CalendarPage: React.FC = () => {
                                     removeFromTimeSpanInRangeCache(apollo.cache, selected.data!.id, timeSpansResult.variables);
                                     setSelected({selected: null, data: null});
                                 }}
+                                continued={() => setCurrentDate(moment())}
                                 range={{
                                     from: moment(selected.data!.start),
                                     to: selected.data!.end ? moment(selected.data!.end) : undefined,

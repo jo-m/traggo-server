@@ -39,6 +39,7 @@ export interface TimeSpanProps {
     rangeChange?: (r: Range) => void;
     deleted?: () => void;
     stopped?: () => void;
+    continued?: () => void;
     addTagsToTracker?: (tags: TagSelectorEntry[]) => void;
     elevation?: number;
 }
