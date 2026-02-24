@@ -22,3 +22,10 @@ export const uglyConvertToLocalTime = (m: moment.Moment): moment.Moment => {
 };
 
 export const inUserTz = (m: moment.Moment): moment.Moment => m.tz(moment.tz.guess());
+
+export const formatHHMMSS = (totalSeconds: number): string => {
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = Math.floor(totalSeconds % 60);
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+};

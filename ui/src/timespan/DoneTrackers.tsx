@@ -4,14 +4,15 @@ import * as gqlTimeSpan from '../gql/timeSpan';
 import * as gqlTag from '../gql/tags';
 import {TimeSpan, TimeSpanProps} from './TimeSpan';
 import {Tags} from '../gql/__generated__/Tags';
+import {Trackers} from '../gql/__generated__/Trackers';
 import useInterval from '@rooks/use-interval';
 import moment from 'moment';
 import {TimeSpans, TimeSpansVariables} from '../gql/__generated__/TimeSpans';
 import {Typography} from '@material-ui/core';
 import {GroupedTimeSpanProps, toGroupedTimeSpanProps} from './timespanutils';
+import {formatHHMMSS} from './timeutils';
 import {TagSelectorEntry} from '../tag/tagSelectorEntry';
 import ReactInfinite from 'react-infinite';
-import {isSameDate} from '../utils/time';
 
 interface DoneTrackersProps {
     addTagsToTracker?: (entries: TagSelectorEntry[]) => void;
@@ -23,14 +24,13 @@ export const DoneTrackers: React.FC<DoneTrackersProps> = ({addTagsToTracker}) =>
     });
     const loading = React.useRef(false);
     const tagsResult = useQuery<Tags>(gqlTag.Tags);
+    const activeTrackersResult = useQuery<Trackers>(gqlTimeSpan.Trackers);
     const [infiniteLoading, setInfiniteLoading] = React.useState(false);
-    const [currentDate, setCurrentDate] = React.useState(moment());
+    const [now, setNow] = React.useState(moment());
     const [heights, setHeights] = React.useState<Record<string, number>>({});
     useInterval(
         () => {
-            if (!isSameDate(currentDate, moment())) {
-                setCurrentDate(moment());
-            }
+            setNow(moment());
         },
         1000,
         true
@@ -75,6 +75,24 @@ export const DoneTrackers: React.FC<DoneTrackersProps> = ({addTagsToTracker}) =>
             });
     };
 
+    const activeTimerSeconds = React.useMemo(() => {
+        if (!activeTrackersResult.data || !activeTrackersResult.data.timers) {
+            return 0;
+        }
+        const dayStartUnix = moment(now)
+            .startOf('day')
+            .unix();
+        const nowUnix = now.unix();
+        let total = 0;
+        for (const timer of activeTrackersResult.data.timers) {
+            const startUnix = Math.max(moment.parseZone(timer.start).unix(), dayStartUnix);
+            if (nowUnix > startUnix) {
+                total += nowUnix - startUnix;
+            }
+        }
+        return total;
+    }, [activeTrackersResult.data, now]);
+
     const values: GroupedTimeSpanProps = React.useMemo(() => {
         if (
             trackersResult.error ||
@@ -88,8 +106,8 @@ export const DoneTrackers: React.FC<DoneTrackersProps> = ({addTagsToTracker}) =>
         ) {
             return [];
         }
-        return toGroupedTimeSpanProps(trackersResult.data.timeSpans.timeSpans, tagsResult.data.tags, currentDate);
-    }, [trackersResult, tagsResult, currentDate]);
+        return toGroupedTimeSpanProps(trackersResult.data.timeSpans.timeSpans, tagsResult.data.tags, now);
+    }, [trackersResult, tagsResult, now]);
 
     return (
         <div style={{marginTop: 10}}>
@@ -106,12 +124,13 @@ export const DoneTrackers: React.FC<DoneTrackersProps> = ({addTagsToTracker}) =>
                     </Typography>
                 }
                 elementHeight={values.map((m) => heights[m.key] || 500)}>
-                {values.map(({key, timeSpans}) => {
+                {values.map(({key, timeSpans, totalSeconds, isToday}) => {
                     return (
                         <DatedTimeSpans
                             key={key}
                             name={key}
                             timeSpans={timeSpans}
+                            totalSeconds={isToday ? totalSeconds + activeTimerSeconds : totalSeconds}
                             addTagsToTracker={addTagsToTracker}
                             setHeight={setHeights}
                             height={heights[key] || 500}
@@ -125,10 +144,11 @@ export const DoneTrackers: React.FC<DoneTrackersProps> = ({addTagsToTracker}) =>
 
 const DatedTimeSpans: React.FC<{
     name: string;
+    totalSeconds: number;
     setHeight: (cb: (height: Record<string, number>) => Record<string, number>) => void;
     height: number;
     timeSpans: TimeSpanProps[];
-} & DoneTrackersProps> = ({name, timeSpans, addTagsToTracker, setHeight, height}) => {
+} & DoneTrackersProps> = ({name, totalSeconds, timeSpans, addTagsToTracker, setHeight, height}) => {
     const ref = React.useRef<HTMLDivElement | null>();
     React.useEffect(() => {
         const currentHeight = ref.current && ref.current.getBoundingClientRect().height;
@@ -139,7 +159,7 @@ const DatedTimeSpans: React.FC<{
     return (
         <div key={name} ref={(r) => (ref.current = r)}>
             <Typography key={name} align="center" variant={'h5'}>
-                {name}
+                {name} — {formatHHMMSS(totalSeconds)}
             </Typography>
             {timeSpans.map((timeSpanProps) => (
                 <TimeSpan key={timeSpanProps.id} {...timeSpanProps} addTagsToTracker={addTagsToTracker} />

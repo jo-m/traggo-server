@@ -25,10 +25,13 @@ export const toTimeSpanProps = (timers: Trackers_timers[], tags: Tags_tags[]): T
 };
 
 type GroupedByIndex = Record<string, TimeSpans_timeSpans_timeSpans[]>;
-const group = (startOfTomorrow: moment.Moment, startOfToday: moment.Moment, startOfYesterday: moment.Moment) => (
-    a: GroupedByIndex,
-    current: TimeSpans_timeSpans_timeSpans
-): GroupedByIndex => {
+type GroupedDayStart = Record<string, number>;
+const group = (
+    startOfTomorrow: moment.Moment,
+    startOfToday: moment.Moment,
+    startOfYesterday: moment.Moment,
+    dayStarts: GroupedDayStart
+) => (a: GroupedByIndex, current: TimeSpans_timeSpans_timeSpans): GroupedByIndex => {
     const startTime = moment(current.oldStart || current.start);
     let date = `${startTime.format('dddd')}, ${startTime.format('LL')}`;
     if (startTime.isBetween(startOfToday, startOfTomorrow)) {
@@ -37,33 +40,53 @@ const group = (startOfTomorrow: moment.Moment, startOfToday: moment.Moment, star
         date = `${date} (yesterday)`;
     }
     a[date] = [...(a[date] || []), current];
+    if (!(date in dayStarts)) {
+        dayStarts[date] = moment(startTime)
+            .startOf('day')
+            .unix();
+    }
     return a;
 };
 
-export type GroupedTimeSpanProps = Array<{key: string; timeSpans: TimeSpanProps[]}>;
+export type GroupedTimeSpanProps = Array<{key: string; timeSpans: TimeSpanProps[]; totalSeconds: number; isToday: boolean}>;
 
 export const toGroupedTimeSpanProps = (
     timeSpans: TimeSpans_timeSpans_timeSpans[],
     tags: Tags_tags[],
     now: moment.Moment
 ): GroupedTimeSpanProps => {
+    const dayStarts: GroupedDayStart = {};
+    const startOfToday = moment(now).startOf('day');
+    const startOfTomorrow = moment(now)
+        .add(1, 'day')
+        .startOf('day');
+    const startOfYesterday = moment(now)
+        .subtract(1, 'day')
+        .startOf('day');
     const datesWithTimeSpans: GroupedByIndex = timeSpans.reduce(
-        group(
-            moment(now)
-                .add(1, 'day')
-                .startOf('day'),
-            moment(now).startOf('day'),
-            moment(now)
-                .subtract(1, 'day')
-                .startOf('day')
-        ),
+        group(startOfTomorrow, startOfToday, startOfYesterday, dayStarts),
         {}
     );
     return Object.keys(datesWithTimeSpans).map((key) => {
         const groupedTimeSpans = datesWithTimeSpans[key];
+        const dayStartUnix = dayStarts[key];
+        const dayEndUnix = dayStartUnix + 86400;
+        let totalSeconds = 0;
+        for (const ts of groupedTimeSpans) {
+            if (!ts.end) {
+                continue;
+            }
+            const startUnix = Math.max(moment.parseZone(ts.start).unix(), dayStartUnix);
+            const endUnix = Math.min(moment.parseZone(ts.end).unix(), dayEndUnix);
+            if (endUnix > startUnix) {
+                totalSeconds += endUnix - startUnix;
+            }
+        }
         return {
             key,
             timeSpans: toTimeSpanProps(groupedTimeSpans, tags),
+            totalSeconds,
+            isToday: key.includes('(today)'),
         };
     });
 };
