@@ -37,6 +37,7 @@ export interface TagSelectorProps {
     createTags?: boolean;
     allowDuplicateKeys?: boolean;
     onlySelectKeys?: boolean;
+    removeWhenClicked?: boolean;
 }
 
 export const TagSelector: React.FC<TagSelectorProps> = ({
@@ -47,6 +48,7 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
     createTags = true,
     allowDuplicateKeys = false,
     onlySelectKeys = false,
+    removeWhenClicked = false,
 }) => {
     const classes = useStyles();
     const [tooltipErrorActive, tooltipError, showTooltipError] = useError(4000);
@@ -125,21 +127,14 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
         return;
     };
 
-    const onTagClicked = (entry: TagSelectorEntry, edit: boolean) => {
-        // Prevent overwriting text that's already being edited
-        if (currentValue && edit) {
-            showTooltipError('Input is not empty. Use ctrl+click to delete tag without editing.');
+    const onTagClicked = (entry: TagSelectorEntry) => {
+        if (!removeWhenClicked) {
             return;
         }
+        const tagIndex = selectedEntries.indexOf(entry);
+        selectedEntries.splice(tagIndex, 1);
 
-        setSelectedEntries(selectedEntries.filter((selected) => selected !== entry));
-
-        if (edit) {
-            setCurrentValueInternal(itemLabel(entry, onlySelectKeys));
-            setOpen(true);
-        }
-
-        focusInput();
+        setSelectedEntries(selectedEntries);
     };
 
     const onKeyDown = (event: React.KeyboardEvent) => {
@@ -182,7 +177,6 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
                     disableHoverListener
                     disableTouchListener
                     open={tooltipErrorActive}
-                    PopperProps={{style: {zIndex: 100000}}}
                     placement={'top'}
                     title={
                         <Typography color="inherit" style={{whiteSpace: 'pre-line'}}>
@@ -223,10 +217,7 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
                 ) : null}
                 {addDialogOpen && (
                     <AddTagDialog
-                        onAdded={(tag) => {
-                            const valuePart = currentValue.split(':')[1] || '';
-                            trySubmit({tag, value: valuePart});
-                        }}
+                        onAdded={(tag) => trySubmit({tag, value: ''})}
                         open={true}
                         initialName={currentValue.split(':')[0]}
                         close={() => {
@@ -263,17 +254,13 @@ const Item: React.FC<ItemProps> = ({entry, selected, onlySelectKeys, onClick}) =
     );
 };
 
-const toChips = (
-    entries: TagSelectorEntry[],
-    onlySelectKeys: boolean,
-    onClick: (entry: TagSelectorEntry, edit: boolean) => void
-) => {
+const toChips = (entries: TagSelectorEntry[], onlySelectKeys: boolean, onClick: (entry: TagSelectorEntry) => void) => {
     return entries.map((entry) => (
         <TagChip
             key={itemLabel(entry, onlySelectKeys)}
             label={itemLabel(entry, onlySelectKeys)}
             color={entry.tag.color}
-            onClick={(e) => onClick(entry, !e.ctrlKey)}
+            onClick={() => onClick(entry)}
         />
     ));
 };

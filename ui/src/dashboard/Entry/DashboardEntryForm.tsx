@@ -206,6 +206,7 @@ export const DashboardEntryForm: React.FC<EditPopupProps> = ({entry, onChange: s
                 }}
                 createTags={false}
                 onlySelectKeys
+                removeWhenClicked
             />
 
             <FormTagSelector
